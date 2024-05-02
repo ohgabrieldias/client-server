@@ -53,7 +53,7 @@ class ClientWindow(QMainWindow):
         # Envia os resultados para o servidor
         self.operationLogTextEdit.append("Enviando resultados para o servidor...")
         self.enviar_resultados(self.client_socket, soma_pares, soma_impares, pi)
-        self.operationLogTextEdit.append("Done!!")
+        self.operationLogTextEdit.append(self.decode_server_message(self.client_socket))
         self.client_socket.close()
 
     def decode_server_message(self, socket):

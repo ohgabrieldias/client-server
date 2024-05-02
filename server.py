@@ -34,7 +34,8 @@ class ClientHandler:
             if not resultado:
                 break
             resultados.append(resultado)
-
+            # Envia uma confirmação de volta para o cliente
+            self.client_socket.sendall(b"200 - Sever received the data\n")
         # Imprime os resultados recebidos
         self.log_callback(f"\nResultados recebidos do cliente {client_address[0]}:{client_address[1]}:")
         for resultado in resultados:
