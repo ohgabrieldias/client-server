@@ -1,9 +1,11 @@
+import os
 import random
 import socket
 import time
 import matplotlib.pyplot as plt
 import numpy as np
 import threading
+import netifaces
 
 def conectar_ao_servidor(host, porta):
     start_time = time.time()
@@ -123,8 +125,77 @@ def client_thread(host, porta, connection_times, response_times, success_count, 
     client_socket.close()
     success_count.append(1)
 
+def save_graphs(N, success_count, failure_count, network_latency, response_times, connection_times):
+    # Criar a pasta se ela não existir
+    folder_name = str(N)
+    if not os.path.exists(folder_name):
+        os.makedirs(folder_name)
+
+    # Gráfico de pizza para taxa de sucesso/falha
+    fig, ax = plt.subplots(2, 1, figsize=(10, 5))
+    ax[0].pie([success_count, failure_count], labels=['Sucesso', 'Falha'], autopct='%1.1f%%', startangle=140)
+    ax[0].set_title('Taxa de Sucesso/Falha')
+
+    # Histograma para latência da rede
+    ax[1].hist(network_latency, bins=20, color='skyblue', edgecolor='black')
+    ax[1].set_xlabel('Latência da Rede (s)')
+    ax[1].set_ylabel('Frequência')
+    ax[1].set_title('Distribuição da Latência da Rede')
+
+    plt.tight_layout()
+    plt.savefig(os.path.join(folder_name, 'taxa_sucesso_falha_e_latencia.png'))
+    plt.close()
+
+    # Gráfico de barras para tempo médio de resposta do servidor
+    fig, ax = plt.subplots(2, 1, figsize=(10, 5))
+    ax[0].hist(response_times, bins=20, color='skyblue', edgecolor='black')
+    ax[0].set_xlabel('Tempo de Resposta (s)')
+    ax[0].set_ylabel('Frequência')
+    ax[0].set_title('Distribuição do Tempo de Resposta do Servidor')
+
+    # Gráfico de barras para tempo de conexão
+    ax[1].hist(connection_times, bins=20, color='lightgreen', edgecolor='black')
+    ax[1].set_xlabel('Tempo de Conexão (s)')
+    ax[1].set_ylabel('Frequência')
+    ax[1].set_title('Distribuição do Tempo de Conexão')
+
+    plt.tight_layout()
+    plt.savefig(os.path.join(folder_name, 'distribuicao_tempo_resposta_e_conexao.png'))
+    plt.close()
+
+    # Gráfico de linhas para tempo de resposta x número de conexões e tempo de conexão x número de conexões
+    fig, ax = plt.subplots(2, 1, figsize=(10, 5))
+    #plotar grafico tempo de resposta x numero de conexoes e gra
+    ax[0].plot(response_times)
+    ax[0].set_xlabel('Número de conexões')
+    ax[0].set_ylabel('Tempo de resposta (s)')
+    ax[0].set_title('Tempo de resposta x Número de conexões')
+
+    ax[1].plot(connection_times)
+    ax[1].set_xlabel('Número de conexões')
+    ax[1].set_ylabel('Tempo de conexão (s)')
+    ax[1].set_title('Tempo de conexão x Número de conexões')
+
+    plt.tight_layout()
+    plt.savefig(os.path.join(folder_name, 'tempo_resposta_e_conexao_x_num_conexoes.png'))
+    plt.close()
+
+
+def get_local_ip():
+    interfaces = netifaces.interfaces()
+    for interface in interfaces:
+        addresses = netifaces.ifaddresses(interface)
+        if netifaces.AF_INET in addresses:
+            for address_info in addresses[netifaces.AF_INET]:
+                ip_address = address_info.get('addr')
+                if ip_address and ip_address != '127.0.0.1':
+                    return ip_address
+    return None
+
 def main(num_clientes):
-    HOST = '127.0.0.1'  # Endereço IP do servidor
+    HOST = get_local_ip()
+    if HOST:
+        print("Endereço IP da máquina na rede local:", HOST)
     PORTA = 12345        # Porta que o servidor está escutando
 
     connection_times = []
@@ -149,54 +220,8 @@ def main(num_clientes):
     queue_size = total_connections - success_count  # Aproximação do tamanho da fila
     network_latency = np.array(connection_times)
 
-    # Plotting the graphs
-    fig, ax = plt.subplots(2, 1, figsize=(10, 5))
+    save_graphs(num_clientes, success_count, failure_count, network_latency, response_times, connection_times)
 
-    # Gráfico de pizza para taxa de sucesso/falha
-    ax[0].pie([success_count, failure_count], labels=['Sucesso', 'Falha'], autopct='%1.1f%%', startangle=140)
-    ax[0].set_title('Taxa de Sucesso/Falha')
-
-    # Histograma para latência da rede
-    ax[1].hist(network_latency, bins=20, color='skyblue', edgecolor='black')
-    ax[1].set_xlabel('Latência da Rede (s)')
-    ax[1].set_ylabel('Frequência')
-    ax[1].set_title('Distribuição da Latência da Rede')
-
-    plt.tight_layout()
-    plt.show()
-
-    # Plotting the response and connection times
-    fig, ax = plt.subplots(2, 1, figsize=(10, 5))
-
-    # Gráfico de barras para tempo médio de resposta do servidor
-    ax[0].hist(response_times, bins=20, color='skyblue', edgecolor='black')
-    ax[0].set_xlabel('Tempo de Resposta (s)')
-    ax[0].set_ylabel('Frequência')
-    ax[0].set_title('Distribuição do Tempo de Resposta do Servidor')
-
-    # Gráfico de barras para tempo de conexão
-    ax[1].hist(connection_times, bins=20, color='lightgreen', edgecolor='black')
-    ax[1].set_xlabel('Tempo de Conexão (s)')
-    ax[1].set_ylabel('Frequência')
-    ax[1].set_title('Distribuição do Tempo de Conexão')
-
-    plt.tight_layout()
-    plt.show()
-
-    fig, ax = plt.subplots(2, 1, figsize=(10, 5))
-    #plotar grafico tempo de resposta x numero de conexoes e gra
-    ax[0].plot(response_times)
-    ax[0].set_xlabel('Número de conexões')
-    ax[0].set_ylabel('Tempo de resposta (s)')
-    ax[0].set_title('Tempo de resposta x Número de conexões')
-
-    ax[1].plot(connection_times)
-    ax[1].set_xlabel('Número de conexões')
-    ax[1].set_ylabel('Tempo de conexão (s)')
-    ax[1].set_title('Tempo de conexão x Número de conexões')
-
-    plt.tight_layout()
-    plt.show()
 if __name__ == "__main__":
     # Testando com diferentes números de clientes: 100, 1000, 10000
     main(100) # Testando com 100 clientes

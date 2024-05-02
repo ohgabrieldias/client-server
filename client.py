@@ -2,6 +2,7 @@ import sys
 from PyQt5.QtWidgets import QApplication, QMainWindow
 from PyQt5.uic import loadUi
 import socket
+import netifaces
 
 class ClientWindow(QMainWindow):
     def __init__(self):
@@ -11,8 +12,21 @@ class ClientWindow(QMainWindow):
         self.startButton.clicked.connect(self.iniciar_calculos)
         self.client_socket = None  # Inicializa o atributo do socket do cliente
 
+    def get_local_ip(self):
+        interfaces = netifaces.interfaces()
+        for interface in interfaces:
+            addresses = netifaces.ifaddresses(interface)
+            if netifaces.AF_INET in addresses:
+                for address_info in addresses[netifaces.AF_INET]:
+                    ip_address = address_info.get('addr')
+                    if ip_address and ip_address != '127.0.0.1':
+                        return ip_address
+        return None
+    
     def iniciar_calculos(self):
-        HOST = '127.0.0.1'  # Endereço IP do servidor
+        HOST = self.get_local_ip()
+        if HOST:
+            print("Endereço IP da máquina na rede local:", HOST)
         PORTA = 12345        # Porta que o servidor está escutando
 
         # Conecta-se ao servidor

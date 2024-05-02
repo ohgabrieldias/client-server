@@ -8,6 +8,8 @@ from PyQt5 import QtCore
 from PyQt5.uic import loadUi
 import random
 import concurrent.futures
+import netifaces
+
 
 intervalos_utilizados = set()
 
@@ -134,9 +136,22 @@ class ServerWindow(QMainWindow): # Classe que representa a janela do servidor
 
         self.server = None
 
+    def get_local_ip(self):
+        interfaces = netifaces.interfaces()
+        for interface in interfaces:
+            addresses = netifaces.ifaddresses(interface)
+            if netifaces.AF_INET in addresses:
+                for address_info in addresses[netifaces.AF_INET]:
+                    ip_address = address_info.get('addr')
+                    if ip_address and ip_address != '127.0.0.1':
+                        return ip_address
+        return None
+
     def iniciar_servidor(self):
         if not self.server:
-            HOST = '127.0.0.1'  # Endereço IP do servidor
+            HOST = self.get_local_ip()
+            if HOST:
+                print("Endereço IP da máquina na rede local:", HOST)
             PORTA = 12345        # Porta que o servidor vai escutar
             max_connections = self.maxConnectionsSpinBox.value() # Número máximo de conexões defninido pelo usuário
             self.server = Server(HOST, PORTA, max_connections, self.update_log_info, self.update_connection_log_info)   # Instancia o servidor
