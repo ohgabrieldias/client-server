@@ -196,7 +196,7 @@ def get_local_ip():
     return None
 
 def main(num_clientes):
-    HOST = get_local_ip()
+    HOST = "192.168.1.109"
     if HOST:
         print("Endereço IP da máquina na rede local:", HOST)
     PORTA = 12345        # Porta que o servidor está escutando
