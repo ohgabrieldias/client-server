@@ -20,6 +20,16 @@ def conectar_ao_servidor(host, porta):
     return client_socket, connection_time
 
 def receber_intervalo(mensagem):
+    """
+    Extrai o intervalo recebido do servidor.
+
+    Parâmetros:
+        mensagem (str): A mensagem recebida do servidor.
+
+    Retorna:
+        intervalo (tuple): O intervalo (tupla de dois números inteiros).
+        reception_time (float): O tempo de recepção da mensagem.
+    """
     start_time = time.time()
     intervalo = mensagem.split()
     if len(intervalo) != 2:
@@ -31,9 +41,28 @@ def receber_intervalo(mensagem):
     return (a, b), reception_time
 
 def decode_server_message(socket):
+    """
+    Decodifica mensagens recebidas do servidor.
+
+    Parâmetros:
+        socket (socket): O socket do servidor.
+
+    Retorna:
+        A mensagem decodificada (str).
+    """
     return socket.recv(1024).decode().strip()
 
 def calcular_soma_pares(intervalo):
+    """
+    Calcula a soma dos números pares dentro do intervalo.
+
+    Parâmetros:
+        intervalo (tuple): O intervalo de números (tupla de dois números inteiros).
+
+    Retorna:
+        soma (int): A soma dos números pares dentro do intervalo.
+        calculation_time (float): O tempo de duração do cálculo.
+    """
     start_time = time.time()
     a, b = intervalo
     soma = sum(x for x in range(a, b+1) if x % 2 == 0)
@@ -42,6 +71,16 @@ def calcular_soma_pares(intervalo):
     return soma, calculation_time
 
 def calcular_soma_impares(intervalo):
+    """
+    Calcula a soma dos números ímpares dentro do intervalo.
+
+    Parâmetros:
+        intervalo (tuple): O intervalo de números (tupla de dois números inteiros).
+
+    Retorna:
+        soma (int): A soma dos números ímpares dentro do intervalo.
+        calculation_time (float): O tempo de duração do cálculo.
+    """
     start_time = time.time()
     a, b = intervalo
     soma = sum(x for x in range(a, b+1) if x % 2 != 0)
@@ -50,6 +89,16 @@ def calcular_soma_impares(intervalo):
     return soma, calculation_time
 
 def calcular_pi(intervalo):
+    """
+    Calcula o valor de PI utilizando a fórmula de Leibniz.
+
+    Parâmetros:
+        intervalo (tuple): O intervalo de números (tupla de dois números inteiros).
+
+    Retorna:
+        pi (float): O valor de PI calculado.
+        calculation_time (float): O tempo de duração do cálculo.
+    """
     start_time = time.time()
     a, b = intervalo
     pi = 0
@@ -62,6 +111,18 @@ def calcular_pi(intervalo):
     return pi*4, calculation_time
 
 def enviar_resultados(socket, soma_pares, soma_impares, pi):
+    """
+    Envia os resultados dos cálculos para o servidor.
+
+    Parâmetros:
+        socket (socket): O socket do cliente conectado ao servidor.
+        soma_pares (int): A soma dos números pares.
+        soma_impares (int): A soma dos números ímpares.
+        pi (float): O valor de PI calculado.
+
+    Retorna:
+        sending_time (float): O tempo de duração do envio.
+    """
     mensagem = f"Soma dos números pares: {soma_pares}\n"
     mensagem += f"Soma dos números ímpares: {soma_impares}\n"
     mensagem += f"Cálculo de PI com o intervalo: {pi}\n"
@@ -77,6 +138,20 @@ def enviar_resultados(socket, soma_pares, soma_impares, pi):
     return sending_time
 
 def calcular_dados(intervalo):
+    """
+    Calcula os resultados dos cálculos.
+
+    Parâmetros:
+        intervalo (tuple): O intervalo de números (tupla de dois números inteiros).
+
+    Retorna:
+        soma_pares (int): A soma dos números pares.
+        soma_impares (int): A soma dos números ímpares.
+        pi (float): O valor de PI calculado.
+        calculation_time_sum_even (float): O tempo de duração do cálculo da soma dos números pares.
+        calculation_time_sum_odd (float): O tempo de duração do cálculo da soma dos números ímpares.
+        calculation_time_pi (float): O tempo de duração do cálculo de PI.
+    """
     soma_pares, calculation_time_sum_even = calcular_soma_pares(intervalo)
     soma_impares, calculation_time_sum_odd = calcular_soma_impares(intervalo)
     pi, calculation_time_pi = calcular_pi(intervalo)
@@ -84,7 +159,14 @@ def calcular_dados(intervalo):
     return soma_pares, soma_impares, pi, calculation_time_sum_even, calculation_time_sum_odd, calculation_time_pi
 
 def gerar_dados_falsos():
-    # Gerando dados falsos para envio ao servidor
+    """
+    Gera dados falsos para envio ao servidor.
+
+    Retorna:
+        soma_pares (int): A soma dos números pares falsos.
+        soma_impares (int): A soma dos números ímpares falsos.
+        pi (float): O valor de PI falso.
+    """
     intervalo = (1, 1000000)
     soma_pares = random.randint(1, 1000000)
     soma_impares = random.randint(1, 1000000)
@@ -94,6 +176,17 @@ def gerar_dados_falsos():
 
 
 def client_thread(host, porta, connection_times, response_times, success_count, failure_count):
+    """
+    Função a ser executada em cada thread do cliente.
+
+    Parâmetros:
+        host (str): O endereço IP do servidor.
+        porta (int): O número da porta do servidor.
+        connection_times (list): Lista para armazenar os tempos de conexão.
+        response_times (list): Lista para armazenar os tempos de resposta.
+        success_count (list): Lista para armazenar os sucessos de conexão.
+        failure_count (list): Lista para armazenar as falhas de conexão.
+    """
     client_socket, connection_time = conectar_ao_servidor(host, porta)
     if client_socket is None:
         print("Falha ao conectar ao servidor.")
@@ -126,6 +219,17 @@ def client_thread(host, porta, connection_times, response_times, success_count, 
     success_count.append(1)
 
 def save_graphs(N, success_count, failure_count, network_latency, response_times, connection_times):
+    """
+    Salva os gráficos gerados.
+
+    Parâmetros:
+        N (int): O número de clientes.
+        success_count (int): O número de conexões bem-sucedidas.
+        failure_count (int): O número de conexões falhadas.
+        network_latency (numpy.array): Array com os tempos de latência da rede.
+        response_times (list): Lista com os tempos de resposta.
+        connection_times (list): Lista com os tempos de conexão.
+    """
     # Obter o diretório atual do script
     current_dir = os.path.dirname(os.path.abspath(__file__))
     
@@ -185,6 +289,12 @@ def save_graphs(N, success_count, failure_count, network_latency, response_times
 
 
 def get_local_ip():
+    """
+    Obtém o endereço IP local da máquina.
+
+    Retorna:
+        ip_address (str): O endereço IP local da máquina.
+    """
     interfaces = netifaces.interfaces()
     for interface in interfaces:
         addresses = netifaces.ifaddresses(interface)
@@ -196,6 +306,12 @@ def get_local_ip():
     return None
 
 def main(num_clientes):
+    """
+    Função principal para testar o desempenho do servidor com um número específico de clientes.
+
+    Parâmetros:
+        num_clientes (int): O número de clientes a serem simulados.
+    """
     HOST = "192.168.1.109"
     if HOST:
         print("Endereço IP da máquina na rede local:", HOST)

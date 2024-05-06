@@ -5,14 +5,34 @@ import socket
 import netifaces
 
 class ClientWindow(QMainWindow):
+    """
+    Classe que representa a janela do cliente.
+
+    Métodos:
+        get_local_ip(): Obtém o endereço IP da máquina na rede local.
+        iniciar_calculos(): Inicia o processo de cálculos e comunicação com o servidor.
+        decode_server_message(socket): Decodifica mensagens recebidas do servidor.
+        conectar_ao_servidor(host, porta): Conecta-se ao servidor.
+        receber_intervalo(mensagem): Extrai o intervalo recebido do servidor.
+        calcular_soma_pares(intervalo): Calcula a soma dos números pares dentro do intervalo.
+        calcular_soma_impares(intervalo): Calcula a soma dos números ímpares dentro do intervalo.
+        calcular_pi(intervalo): Calcula o valor de PI utilizando a fórmula de Leibniz.
+        enviar_resultados(client_socket, soma_pares, soma_impares, pi): Envia os resultados dos cálculos para o servidor.
+    """
     def __init__(self):
         super(ClientWindow, self).__init__()
-        loadUi("client.ui", self)  # Carrega o arquivo .ui
+        loadUi("client.ui", self)
 
         self.startButton.clicked.connect(self.iniciar_calculos)
-        self.client_socket = None  # Inicializa o atributo do socket do cliente
+        self.client_socket = None
 
     def get_local_ip(self):
+        """
+        Obtém o endereço IP da máquina na rede local.
+
+        Retorna:
+            Endereço IP da máquina na rede local.
+        """
         interfaces = netifaces.interfaces()
         for interface in interfaces:
             addresses = netifaces.ifaddresses(interface)
@@ -24,17 +44,19 @@ class ClientWindow(QMainWindow):
         return None
     
     def iniciar_calculos(self):
+        """
+        Inicia o processo de cálculos e comunicação com o servidor.
+        """
         HOST = self.get_local_ip()
         if HOST:
             print("Endereço IP da máquina na rede local:", HOST)
-        PORTA = 12345        # Porta que o servidor está escutando
+        PORTA = 12345
 
-        # Conecta-se ao servidor
         self.operationLogTextEdit.append("Conectando ao servidor...")
         self.client_socket = self.conectar_ao_servidor(HOST, PORTA)
         if self.client_socket is None:
             self.operationLogTextEdit.append("Falha ao conectar ao servidor.")
-            return  # Encerra a função se a conexão falhou
+            return
         
         mensagem = self.decode_server_message(self.client_socket)
         
@@ -44,19 +66,16 @@ class ClientWindow(QMainWindow):
             return
         self.operationLogTextEdit.append("\nConexão estabelecida com sucesso.")
 
-        # Recebe o intervalo do servidor
         self.operationLogTextEdit.append("Recebendo intervalo do servidor...")
         intervalo = self.receber_intervalo(mensagem)
 
         if intervalo is None:
-            # Handle case where server rejected connection due to max connections reached
             self.operationLogTextEdit.append("Servidor atingiu o máximo de conexões permitidas. Tente novamente mais tarde.")
             self.client_socket.close()
             return
 
         self.operationLogTextEdit.append(f"Intervalo recebido: {intervalo}")
 
-        # Calcula os resultados
         self.operationLogTextEdit.append("Calculando resultados...")
         soma_pares = self.calcular_soma_pares(intervalo)
         soma_impares = self.calcular_soma_impares(intervalo)
@@ -64,48 +83,103 @@ class ClientWindow(QMainWindow):
         self.operationLogTextEdit.append(f"Soma dos números pares: {soma_pares}")
         self.operationLogTextEdit.append(f"Soma dos números ímpares: {soma_impares}")
         self.operationLogTextEdit.append(f"Cálculo de PI com o intervalo: {pi}")
-        # Envia os resultados para o servidor
+
         self.operationLogTextEdit.append("Enviando resultados para o servidor...")
         self.enviar_resultados(self.client_socket, soma_pares, soma_impares, pi)
         self.operationLogTextEdit.append(self.decode_server_message(self.client_socket))
         self.client_socket.close()
 
     def decode_server_message(self, socket):
+        """
+        Decodifica mensagens recebidas do servidor.
+
+        Parâmetros:
+            socket: socket do servidor.
+
+        Retorna:
+            Mensagem decodificada.
+        """
         return socket.recv(1024).decode().strip()
     
     def conectar_ao_servidor(self, host, porta):
+        """
+        Conecta-se ao servidor.
+
+        Parâmetros:
+            host: endereço IP do servidor.
+            porta: porta do servidor.
+
+        Retorna:
+            Socket do cliente conectado ao servidor.
+        """
         client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         try:
             client_socket.connect((host, porta))
         except ConnectionRefusedError as e:
-            print(str(e))  # Imprime a mensagem de erro
-            return None  # Retorna None se a conexão falhou
+            print(str(e))
+            return None
         return client_socket
 
     def receber_intervalo(self, mensagem):
+        """
+        Extrai o intervalo recebido do servidor.
+
+        Parâmetros:
+            mensagem: mensagem recebida do servidor.
+
+        Retorna:
+            Intervalo (tupla de dois números inteiros) ou None se a mensagem for inválida.
+        """
         if not mensagem:
-            return None  # Retorna None se a mensagem estiver vazia
+            return None
 
         intervalo = mensagem.split()
         if len(intervalo) != 2:
-            return None  # Retorna None se a mensagem não contiver um intervalo válido
+            return None
 
         a, b = int(intervalo[0]), int(intervalo[1])
         return a, b
 
 
     def calcular_soma_pares(self, intervalo):
+        """
+        Calcula a soma dos números pares dentro do intervalo.
+
+        Parâmetros:
+            intervalo: tupla contendo os limites do intervalo.
+
+        Retorna:
+            Soma dos números pares dentro do intervalo.
+        """
         a, b = intervalo
         soma = sum(x for x in range(a, b+1) if x % 2 == 0)
         
         return soma
 
     def calcular_soma_impares(self, intervalo):
+        """
+        Calcula a soma dos números ímpares dentro do intervalo.
+
+        Parâmetros:
+            intervalo: tupla contendo os limites do intervalo.
+
+        Retorna:
+            Soma dos números ímpares dentro do intervalo.
+        """
         a, b = intervalo
         soma = sum(x for x in range(a, b+1) if x % 2 != 0)
         return soma
     
     def calcular_pi(self, intervalo):
+        """
+        Calcula o valor de PI utilizando a fórmula de Leibniz.
+
+        Parâmetros:
+            intervalo: tupla contendo os limites do intervalo.
+
+        Retorna:
+            Valor de PI calculado.
+        """
         a, b = intervalo
         pi = 0
         for i in range(a, b+1):
@@ -115,6 +189,15 @@ class ClientWindow(QMainWindow):
         return pi*4
     
     def enviar_resultados(self, client_socket, soma_pares, soma_impares, pi):
+        """
+        Envia os resultados dos cálculos para o servidor.
+
+        Parâmetros:
+            client_socket: socket do cliente conectado ao servidor.
+            soma_pares: soma dos números pares.
+            soma_impares: soma dos números ímpares.
+            pi: valor de PI calculado.
+        """
         try:
             mensagem = f"Soma dos números pares: {soma_pares}\n"
             mensagem += f"Soma dos números ímpares: {soma_impares}\n"
