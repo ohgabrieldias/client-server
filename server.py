@@ -166,12 +166,7 @@ class Server:
         """
         if self.server_socket:
             self.server_socket.close()
-        for conn in self.executor._threads:
-            try:
-                conn.client_socket.close()
-            except Exception as e:
-                print(f"Erro ao fechar a conexão: {e}")
-        self.executor.shutdown()
+        self.executor.shutdown(wait=False)  # Usamos wait=False para evitar bloqueio
         self.running = False
         self.log_callback("Servidor parando.....")
 
